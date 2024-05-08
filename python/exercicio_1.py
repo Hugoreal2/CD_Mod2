@@ -87,6 +87,7 @@ def repetition_encode_bits(message: bytes, repetitions: int) -> bytes:
             encoded_bits += str((byte >> i) & 1) * repetitions
     return bits_to_bytes(encoded_bits)
 
+
 def repetition_decode_bits(message: bytes, repetitions: int) -> bytes:
     """
     Decode a message using repetition code.
@@ -107,24 +108,126 @@ def repetition_decode_bits(message: bytes, repetitions: int) -> bytes:
     return bits_to_bytes(decoded_string)
 
 
-sample_bytes = bytes([171, 255, 0])
+def hamming_encode_bits(message: bytes) -> bytes:
+    """
+    Encode a message using Hamming code for 7,3. 3 parity bits and 4 bits of data.
 
-encoded_data = repetition_encode_bits(sample_bytes, 3)
+    :param message: the message to be encoded
+
+    :return: the encoded message
+    """
+
+    encoded_hamming_data = ""
+
+    for byte in message:
+        data1 = byte >> 4
+        data2 = byte & 0b1111
+        encoded_byte = hamming_encode(data1)
+        encoded_hamming_data += format(encoded_byte, '08b')
+        encoded_byte = hamming_encode(data2)
+        encoded_hamming_data += format(encoded_byte, '08b')
+
+    return bits_to_bytes(encoded_hamming_data)
+
+def hamming_encode(byte: int) -> int:
+    bit0 = (byte >> 0) & 1
+    bit1 = (byte >> 1) & 1
+    bit2 = (byte >> 2) & 1
+    bit3 = (byte >> 3) & 1
+
+    b0 = bit1 ^ bit2 ^ bit3
+    b1 = bit0 ^ bit1 ^ bit3
+    b2 = bit0 ^ bit2 ^ bit3
+
+    encoded_hamming_data = (byte << 3) | (b0 << 2) | (b1 << 1) | b2
+
+    return encoded_hamming_data
 
 
+def check_and_correct_hamming_code(byte: int) -> int:
+    # get the first 4 bits of the byte and calculate its parity bits then compare it with the parity bits of the byte
+
+    data = byte >> 3
+
+    print("data " + bin(data))
+    print("byte " + bin(byte))
+
+    parity_bits = byte & 0b0000111
+
+    calculated_parity_bits = hamming_encode(data)
+
+    error = 0
+    for i in range(3):
+        if calculated_parity_bits[i] != parity_bits[i]:
+            error += 1
+
+    if error == 0:
+        print("No error detected")
+        return data
+
+    # error detected
+    # correct the error
+    error_bit = 0
+    for i in range(3):
+        error_bit |= (calculated_parity_bits[i] ^ parity_bits[i]) << i
+
+
+def hamming_decode_bits(message: bytes) -> bytes:
+    """
+    Decode a message using Hamming code for 7,3. 3 parity bits and 4 bits of data.
+
+    :param message: the message to be decoded
+
+    :return: the decoded message
+    """
+
+    binary_string = ''.join(format(byte, '08b') for byte in message)
+
+    decoded_string = ''
+
+    print("binary_string " + binary_string)
+
+    for i in range(0, len(binary_string), 7):
+        hamming_code_byte = int(binary_string[i:i + 7], 2)
+        print("hamming_code_byte " + bin(hamming_code_byte))
+        corrected_code = check_and_correct_hamming_code(hamming_code_byte)
+
+        print("corrected_code " + bin(corrected_code))
+        data = corrected_code >> 3
+        decoded_string += format(data, '04b')
+
+    print("decoded_string " + decoded_string)
+    return bits_to_bytes(decoded_string)
+
+sample_bytes = bytes([255, 0b10101010, 0])
+
+# encoded_repetition_data = repetition_encode_bits(sample_bytes, 3)
 
 print("Original data:")
 for byte in sample_bytes:
     print(bin(byte), end=", ")
 print("\n")
 
-print("Encoded data:")
-for byte in encoded_data:
+# print("Encoded repetition data:")
+# for byte in encoded_repetition_data:
+#     print(bin(byte), end=", ")
+# print("\n")
+#
+# print("Decoded repetition  data:")
+# decoded_data = repetition_decode_bits(encoded_repetition_data, 3)
+# for byte in decoded_data:
+#     print(bin(byte), end=", ")
+# print("\n")
+
+encoded_hamming_data = hamming_encode_bits(sample_bytes)
+
+print("Encoded hamming data:")
+for byte in encoded_hamming_data:
     print(bin(byte), end=", ")
 print("\n")
 
-print("Decoded data:")
-decoded_data = repetition_decode_bits(encoded_data, 3)
+print("Decoded hamming data:")
+decoded_data = hamming_decode_bits(encoded_hamming_data)
 for byte in decoded_data:
     print(bin(byte), end=", ")
 print("\n")
