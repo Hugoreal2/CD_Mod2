@@ -97,23 +97,12 @@ def repetition_decode_bits(message: bytes, repetitions: int) -> bytes:
     :return: the decoded message
     """
 
-    message_index = 0
+    binary_string = ''.join(format(byte, '08b') for byte in message)
+
     decoded_string = ''
 
-    while message_index < len(message):
-        byte = message[message_index]
-        bit_index = 0
-
-        # get the first bit of the byte
-
-        while bit_index < 8:
-            bit = (byte >> bit_index) & 1
-            count = 0
-            while count < repetitions:
-                decoded_string += str(bit)
-                count += 1
-            bit_index += 1
-
+    for i in range(0, len(binary_string), repetitions):
+        decoded_string += str(int(binary_string[i]) ^ int(binary_string[i + 1]) ^ int(binary_string[i + 2]))
 
     return bits_to_bytes(decoded_string)
 
@@ -121,6 +110,8 @@ def repetition_decode_bits(message: bytes, repetitions: int) -> bytes:
 sample_bytes = bytes([171, 255, 0])
 
 encoded_data = repetition_encode_bits(sample_bytes, 3)
+
+
 
 print("Original data:")
 for byte in sample_bytes:
@@ -133,7 +124,6 @@ for byte in encoded_data:
 print("\n")
 
 print("Decoded data:")
-
 decoded_data = repetition_decode_bits(encoded_data, 3)
 for byte in decoded_data:
     print(bin(byte), end=", ")
