@@ -72,25 +72,32 @@ def binary_symmetric_channel(sequence: bytes, p: float) -> bytes:
     return new_sequence
 
 
-def repetition_encode_bits(message: bytes, repetitions: int) -> bytes:
+def repetition_encode_bits_3_1(message: bytes) -> bytes:
     """
-    Encode a message using repetition code.
+    Encode a message using repetition code. with each bit being tripled (3,1).
 
     :param message: the message to be encoded
     :param repetitions: the number of repetitions for each bit
 
     :return: the encoded message
     """
-    encoded_bits = ''
-    for byte in message:
-        for i in range(8):  # 8 bits in a byte
-            encoded_bits += str((byte >> i) & 1) * repetitions
-    return bits_to_bytes(encoded_bits)
+
+    encoded_message = bytearray(len(message) * 3)
+
+    for i in range(len(message)):
+        byte = message[i]
+        for j in range(8):
+            bit = (byte >> j) & 1
+            for k in range(3):
+                encoded_message[i * 3 + k] |= bit << j
+
+    return encoded_message
 
 
-def repetition_decode_bits(message: bytes, repetitions: int) -> bytes:
+
+def repetition_decode_bits_3_1(message: bytes) -> bytes:
     """
-    Decode a message using repetition code.
+    Decode a message using repetition code. each bit that appears more than half of the time is considered as the correct bit.
 
     :param message: the message to be decoded
     :param repetitions: the number of repetitions for each bit
@@ -102,10 +109,20 @@ def repetition_decode_bits(message: bytes, repetitions: int) -> bytes:
 
     decoded_string = ''
 
-    for i in range(0, len(binary_string), repetitions):
-        decoded_string += str(int(binary_string[i]) ^ int(binary_string[i + 1]) ^ int(binary_string[i + 2]))
+    for i in range(0, len(binary_string), 3):
+        three_values = binary_string[i:i + 3]
+        decoded_string += get_more_common_bit(three_values)
 
     return bits_to_bytes(decoded_string)
+
+
+def get_more_common_bit(string: str) -> str:
+    count_ones = string.count('1')
+    count_zeros = string.count('0')
+
+    if count_ones > count_zeros:
+        return '1'
+    return '0'
 
 
 def hamming_encode_bits(message: bytes) -> bytes:
@@ -128,6 +145,7 @@ def hamming_encode_bits(message: bytes) -> bytes:
         encoded_hamming_data += format(encoded_byte, '08b')
 
     return bits_to_bytes(encoded_hamming_data)
+
 
 def hamming_encode(byte: int) -> int:
     bit0 = (byte >> 0) & 1
@@ -199,35 +217,36 @@ def hamming_decode_bits(message: bytes) -> bytes:
     print("decoded_string " + decoded_string)
     return bits_to_bytes(decoded_string)
 
+
 sample_bytes = bytes([255, 0b10101010, 0])
 
-# encoded_repetition_data = repetition_encode_bits(sample_bytes, 3)
+encoded_repetition_data = repetition_encode_bits_3_1(sample_bytes)
 
 print("Original data:")
 for byte in sample_bytes:
     print(bin(byte), end=", ")
 print("\n")
 
-# print("Encoded repetition data:")
-# for byte in encoded_repetition_data:
-#     print(bin(byte), end=", ")
-# print("\n")
-#
-# print("Decoded repetition  data:")
-# decoded_data = repetition_decode_bits(encoded_repetition_data, 3)
-# for byte in decoded_data:
-#     print(bin(byte), end=", ")
-# print("\n")
-
-encoded_hamming_data = hamming_encode_bits(sample_bytes)
-
-print("Encoded hamming data:")
-for byte in encoded_hamming_data:
+print("Encoded repetition data:")
+for byte in encoded_repetition_data:
     print(bin(byte), end=", ")
 print("\n")
 
-print("Decoded hamming data:")
-decoded_data = hamming_decode_bits(encoded_hamming_data)
+print("Decoded repetition  data:")
+decoded_data = repetition_decode_bits_3_1(encoded_repetition_data)
 for byte in decoded_data:
     print(bin(byte), end=", ")
 print("\n")
+#
+# encoded_hamming_data = hamming_encode_bits(sample_bytes)
+#
+# print("Encoded hamming data:")
+# for byte in encoded_hamming_data:
+#     print(bin(byte), end=", ")
+# print("\n")
+#
+# print("Decoded hamming data:")
+# decoded_data = hamming_decode_bits(encoded_hamming_data)
+# for byte in decoded_data:
+#     print(bin(byte), end=", ")
+# print("\n")
