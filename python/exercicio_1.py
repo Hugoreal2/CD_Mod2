@@ -84,12 +84,37 @@ def repetition_encode_bits_3_1(message: bytes) -> bytes:
 
     encoded_message = bytearray(len(message) * 3)
 
+
+
     for i in range(len(message)):
         byte = message[i]
+        encoded_message_index = 0
+        encoded_message_bits_filled = 0
+
         for j in range(8):
             bit = (byte >> j) & 1
-            for k in range(3):
-                encoded_message[i * 3 + k] |= bit << j
+
+            # Triplicate each bit
+            triplicated_binary = bit | (bit << 1) | (bit << 2)
+
+            # perfect case
+            if encoded_message_bits_filled <= 5:
+                encoded_message[encoded_message_index] |= triplicated_binary << 5 - encoded_message_bits_filled
+                encoded_message_bits_filled += 3
+
+            # overflow case
+            else:
+                remaining_bits = 8 - encoded_message_bits_filled
+                encoded_message[encoded_message_index] |= triplicated_binary >> (3 - remaining_bits)
+                encoded_message_index += 1
+
+                encoded_message_bits_filled = (3 - (3-remaining_bits))
+                value = triplicated_binary >> (3 - (3-remaining_bits))
+                encoded_message[encoded_message_index] |= value << (8 - remaining_bits)
+
+            if encoded_message_bits_filled == 8:
+                encoded_message_index += 1
+                encoded_message_bits_filled = 0
 
     return encoded_message
 
@@ -218,7 +243,7 @@ def hamming_decode_bits(message: bytes) -> bytes:
     return bits_to_bytes(decoded_string)
 
 
-sample_bytes = bytes([255, 0b10101010, 0])
+sample_bytes = bytes([255])
 
 encoded_repetition_data = repetition_encode_bits_3_1(sample_bytes)
 
