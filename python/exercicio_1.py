@@ -67,6 +67,11 @@ def read_bytes_from_file(file_path: str) -> bytes:
         return file.read()
 
 
+def write_bytes_to_file(file_path: str, data: bytes):
+    with open(file_path, "wb") as file:
+        file.write(data)
+
+
 ## ------------------- BSC FUNCTIONS ------------------- ##
 
 def binary_symmetric_channel(sequence: bytes, p: float) -> bytes:
@@ -237,8 +242,6 @@ def check_and_correct_hamming_code(byte: int) -> int:
     return check_and_correct_hamming_code(data)
 
 
-
-
 def hamming_decode_bits(message: bytes) -> bytes:
     """
     Decode a message using Hamming code for 7,3. 3 parity bits and 4 bits of data.
@@ -266,6 +269,7 @@ def hamming_decode_bits(message: bytes) -> bytes:
 
     return data
 
+
 def test_repetition_code():
     sample_bytes = read_bytes_from_file(test_file)
 
@@ -284,6 +288,8 @@ def test_repetition_code():
         print(f"BER ={p}")
         print(f"BER': {error_rate}")
         print(f"Number of different symbols: {int(number_of_different_bytes)}")
+
+        write_bytes_to_file(f"outputSamples/decoded_repetition_{p}.txt", decoded_data)
 
 
 def test_hamming_code():
@@ -304,6 +310,8 @@ def test_hamming_code():
         print(f"BER': {error_rate}")
         print(f"Number of different symbols: {int(number_of_different_bytes)}")
 
+        write_bytes_to_file(f"outputSamples/decoded_hamming_{p}.txt", decoded_data)
 
-# test_repetition_code()
+
+test_repetition_code()
 test_hamming_code()
