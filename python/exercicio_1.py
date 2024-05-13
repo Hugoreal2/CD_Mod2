@@ -184,27 +184,59 @@ def hamming_encode(data: int) -> str:
 
 
 def check_and_correct_hamming_code(byte: int) -> int:
-    # get the first 4 bits of the byte and calculate its parity bits then compare it with the parity bits of the byte
-
     data = byte >> 3
 
-    parity_bits = byte & 0b0000111
+    parity_bits_str = int_to_binary_string(byte & 0b0000111, 3)
 
-    calculated_parity_bits = hamming_encode(data)
+    calculated_parity_bits_str = hamming_encode(data)[-3:]
 
     error = 0
-    # for i in range(3):
-    # if calculated_parity_bits[i] != parity_bits[i]:
-    # error += 1
+    for i in range(3):
+        if calculated_parity_bits_str[i] != parity_bits_str[i]:
+            error += 1
 
     if error == 0:
         return data
 
+    # can only detect up to 1 error code
+    if error > 1:
+        return data
+
     # error detected
     # correct the error
-    error_bit = 0
-    # for i in range(3):
-    # error_bit |= (calculated_parity_bits[i] ^ parity_bits[i]) << i
+
+    calculated_parity_bits = binary_string_to_bytes(calculated_parity_bits_str)
+    parity_bits = binary_string_to_bytes(parity_bits_str)
+
+    sindroma = calculated_parity_bits[0] ^ parity_bits[0]
+
+    # Síndroma
+    # 1.º bit em erro 011
+    # 2.º bit em erro 110
+    # 3.º bit em erro 101
+    # 4.º bit em erro 111
+    # 5.º bit em erro 100
+    # 6.º bit em erro 010
+    # 7.º bit em erro 001
+
+    if sindroma == 0b011:
+        data ^= 0b1000000
+    elif sindroma == 0b110:
+        data ^= 0b0100000
+    elif sindroma == 0b101:
+        data ^= 0b0010000
+    elif sindroma == 0b111:
+        data ^= 0b0001000
+    elif sindroma == 0b100:
+        data ^= 0b0000100
+    elif sindroma == 0b010:
+        data ^= 0b0000010
+    elif sindroma == 0b001:
+        data ^= 0b0000001
+
+    return check_and_correct_hamming_code(data)
+
+
 
 
 def hamming_decode_bits(message: bytes) -> bytes:
@@ -218,15 +250,9 @@ def hamming_decode_bits(message: bytes) -> bytes:
 
     message_str = bytes_to_binary_string(message)
 
-    # slice message_Str into parts with size 7 each
-
     message_sliced = [message_str[i:i + 7] for i in range(0, len(message_str), 7)]
 
-    # for each part, check and correct the hamming code
-
     data = bytes()
-
-    # for i in (0, len(message_sliced), 2):
 
     for i in range(0, len(message_sliced) - 1, 2):
         first_part = message_sliced[i]
@@ -239,18 +265,6 @@ def hamming_decode_bits(message: bytes) -> bytes:
         data += bytes([first_4_bits | second_4_bits])
 
     return data
-
-    # data = bytes()
-    #
-    # for i in range(0, 7 * message.__len__(), 14):
-    #     byte = int(message_str[i:i + 7], 2)
-    #     first_4_bits = check_and_correct_hamming_code(byte)
-    #     byte = int(message_str[i + 7:i + 14], 2)
-    #     second_4_bits = check_and_correct_hamming_code(byte)
-    #     first_4_bits <<= 4
-    #     data += bytes([first_4_bits | second_4_bits])
-    # return data
-
 
 def test_repetition_code():
     sample_bytes = read_bytes_from_file(test_file)
@@ -291,5 +305,5 @@ def test_hamming_code():
         print(f"Number of different symbols: {int(number_of_different_bytes)}")
 
 
-test_repetition_code()
+# test_repetition_code()
 test_hamming_code()
