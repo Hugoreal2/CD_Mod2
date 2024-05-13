@@ -1,13 +1,14 @@
 import random
 
-p_values = [0.01, 0.05, 0.1, 0.2, 0.5]
+p_values = [0.0001, 0.001, 0.01, 0.1, 0.5]
+test_file = "testFilesCD/alice29.txt"
 
 
 ## ------------------------------------------------------
 #                       UTIL FUNCTIONS
 ## ------------------------------------------------------
 
-def bits_to_bytes(encoded_bits: str) -> bytes:
+def binary_string_to_bytes(encoded_bits: str) -> bytes:
     """
     Convert a string of bits to a bytearray.
 
@@ -15,13 +16,28 @@ def bits_to_bytes(encoded_bits: str) -> bytes:
 
     :return: the bytearray
     """
-    bytes_array = bytearray()
+    byte_data = []
     for i in range(0, len(encoded_bits), 8):
-        byte = 0
-        for j in range(8):
-            byte |= int(encoded_bits[i + j]) << (7 - j)
-        bytes_array.append(byte)
-    return bytes_array
+
+        if i + 8 > len(encoded_bits):
+            byte = int(encoded_bits[i:], 2)
+            remaining_bits = 8 - len(encoded_bits[i:])
+            byte <<= remaining_bits
+            byte_data.append(byte)
+            break
+
+        byte = int(encoded_bits[i:i + 8], 2)
+        byte_data.append(byte)
+    return bytes(byte_data)
+
+
+def bytes_to_binary_string(byte_data: bytes) -> str:
+    binary_string = ''.join(format(byte, '08b') for byte in byte_data)
+    return binary_string
+
+
+def int_to_binary_string(number: int, length: int) -> str:
+    return format(number, f'0{length}b')
 
 
 def calculate_error_rate(original: bytes, received: bytes) -> float:
@@ -33,6 +49,17 @@ def calculate_error_rate(original: bytes, received: bytes) -> float:
     difference = bytes([a ^ b for a, b in zip(original, received)])
 
     return sum(bin(byte).count('1') for byte in difference) / total_bit_size
+
+
+def calculate_total_errors(original: bytes, received: bytes) -> float:
+    if len(original) != len(received):
+        raise ValueError("Original and received data must have the same length")
+
+    total_bit_size = len(original) * 8
+
+    difference = bytes([a ^ b for a, b in zip(original, received)])
+
+    return sum(bin(byte).count('1') for byte in difference) / 8
 
 
 def read_bytes_from_file(file_path: str) -> bytes:
@@ -82,42 +109,13 @@ def repetition_encode_bits_3_1(message: bytes) -> bytes:
     :return: the encoded message
     """
 
-    encoded_message = bytearray(len(message) * 3)
+    encoded_string = bytes_to_binary_string(message)
 
+    ## foreach char in the string, repeat it 3 times
 
+    encoded_string = ''.join([char * 3 for char in encoded_string])
 
-    for i in range(len(message)):
-        byte = message[i]
-        encoded_message_index = 0
-        encoded_message_bits_filled = 0
-
-        for j in range(8):
-            bit = (byte >> j) & 1
-
-            # Triplicate each bit
-            triplicated_binary = bit | (bit << 1) | (bit << 2)
-
-            # perfect case
-            if encoded_message_bits_filled <= 5:
-                encoded_message[encoded_message_index] |= triplicated_binary << 5 - encoded_message_bits_filled
-                encoded_message_bits_filled += 3
-
-            # overflow case
-            else:
-                remaining_bits = 8 - encoded_message_bits_filled
-                encoded_message[encoded_message_index] |= triplicated_binary >> (3 - remaining_bits)
-                encoded_message_index += 1
-
-                encoded_message_bits_filled = (3 - (3-remaining_bits))
-                value = triplicated_binary >> (3 - (3-remaining_bits))
-                encoded_message[encoded_message_index] |= value << (8 - remaining_bits)
-
-            if encoded_message_bits_filled == 8:
-                encoded_message_index += 1
-                encoded_message_bits_filled = 0
-
-    return encoded_message
-
+    return binary_string_to_bytes(encoded_string)
 
 
 def repetition_decode_bits_3_1(message: bytes) -> bytes:
@@ -138,7 +136,7 @@ def repetition_decode_bits_3_1(message: bytes) -> bytes:
         three_values = binary_string[i:i + 3]
         decoded_string += get_more_common_bit(three_values)
 
-    return bits_to_bytes(decoded_string)
+    return binary_string_to_bytes(decoded_string)
 
 
 def get_more_common_bit(string: str) -> str:
@@ -161,30 +159,28 @@ def hamming_encode_bits(message: bytes) -> bytes:
 
     encoded_hamming_data = ""
 
-    for byte in message:
-        data1 = byte >> 4
-        data2 = byte & 0b1111
-        encoded_byte = hamming_encode(data1)
-        encoded_hamming_data += format(encoded_byte, '08b')
-        encoded_byte = hamming_encode(data2)
-        encoded_hamming_data += format(encoded_byte, '08b')
+    for message_byte in message:
+        data1 = message_byte >> 4
+        data2 = message_byte & 0b1111
+        encoded_hamming_data += hamming_encode(data1)
+        encoded_hamming_data += hamming_encode(data2)
 
-    return bits_to_bytes(encoded_hamming_data)
+    return binary_string_to_bytes(encoded_hamming_data)
 
 
-def hamming_encode(byte: int) -> int:
-    bit0 = (byte >> 0) & 1
-    bit1 = (byte >> 1) & 1
-    bit2 = (byte >> 2) & 1
-    bit3 = (byte >> 3) & 1
+def hamming_encode(data: int) -> str:
+    bit0 = (data >> 0) & 1
+    bit1 = (data >> 1) & 1
+    bit2 = (data >> 2) & 1
+    bit3 = (data >> 3) & 1
 
     b0 = bit1 ^ bit2 ^ bit3
     b1 = bit0 ^ bit1 ^ bit3
     b2 = bit0 ^ bit2 ^ bit3
 
-    encoded_hamming_data = (byte << 3) | (b0 << 2) | (b1 << 1) | b2
+    encoded_bits = (data << 3) | (b0 << 2) | (b1 << 1) | b2
 
-    return encoded_hamming_data
+    return int_to_binary_string(encoded_bits, 7)
 
 
 def check_and_correct_hamming_code(byte: int) -> int:
@@ -192,27 +188,23 @@ def check_and_correct_hamming_code(byte: int) -> int:
 
     data = byte >> 3
 
-    print("data " + bin(data))
-    print("byte " + bin(byte))
-
     parity_bits = byte & 0b0000111
 
     calculated_parity_bits = hamming_encode(data)
 
     error = 0
-    for i in range(3):
-        if calculated_parity_bits[i] != parity_bits[i]:
-            error += 1
+    # for i in range(3):
+    # if calculated_parity_bits[i] != parity_bits[i]:
+    # error += 1
 
     if error == 0:
-        print("No error detected")
         return data
 
     # error detected
     # correct the error
     error_bit = 0
-    for i in range(3):
-        error_bit |= (calculated_parity_bits[i] ^ parity_bits[i]) << i
+    # for i in range(3):
+    # error_bit |= (calculated_parity_bits[i] ^ parity_bits[i]) << i
 
 
 def hamming_decode_bits(message: bytes) -> bytes:
@@ -224,54 +216,80 @@ def hamming_decode_bits(message: bytes) -> bytes:
     :return: the decoded message
     """
 
-    binary_string = ''.join(format(byte, '08b') for byte in message)
+    message_str = bytes_to_binary_string(message)
 
-    decoded_string = ''
+    # slice message_Str into parts with size 7 each
 
-    print("binary_string " + binary_string)
+    message_sliced = [message_str[i:i + 7] for i in range(0, len(message_str), 7)]
 
-    for i in range(0, len(binary_string), 7):
-        hamming_code_byte = int(binary_string[i:i + 7], 2)
-        print("hamming_code_byte " + bin(hamming_code_byte))
-        corrected_code = check_and_correct_hamming_code(hamming_code_byte)
+    # for each part, check and correct the hamming code
 
-        print("corrected_code " + bin(corrected_code))
-        data = corrected_code >> 3
-        decoded_string += format(data, '04b')
+    data = bytes()
 
-    print("decoded_string " + decoded_string)
-    return bits_to_bytes(decoded_string)
+    # for i in (0, len(message_sliced), 2):
+
+    for i in range(0, len(message_sliced) - 1, 2):
+        first_part = message_sliced[i]
+        second_part = message_sliced[i + 1]
+
+        first_4_bits = check_and_correct_hamming_code(int(first_part, 2))
+        second_4_bits = check_and_correct_hamming_code(int(second_part, 2))
+
+        first_4_bits <<= 4
+        data += bytes([first_4_bits | second_4_bits])
+
+    return data
+
+    # data = bytes()
+    #
+    # for i in range(0, 7 * message.__len__(), 14):
+    #     byte = int(message_str[i:i + 7], 2)
+    #     first_4_bits = check_and_correct_hamming_code(byte)
+    #     byte = int(message_str[i + 7:i + 14], 2)
+    #     second_4_bits = check_and_correct_hamming_code(byte)
+    #     first_4_bits <<= 4
+    #     data += bytes([first_4_bits | second_4_bits])
+    # return data
 
 
-sample_bytes = bytes([255])
+def test_repetition_code():
+    sample_bytes = read_bytes_from_file(test_file)
 
-encoded_repetition_data = repetition_encode_bits_3_1(sample_bytes)
+    encoded_repetition_data = repetition_encode_bits_3_1(sample_bytes)
+    print(f"Repetition Code (3,1)")
+    print(f"File: {test_file}")
+    print(f"Total Symbols: {len(sample_bytes)}")
 
-print("Original data:")
-for byte in sample_bytes:
-    print(bin(byte), end=", ")
-print("\n")
+    for p in p_values:
+        received_data = binary_symmetric_channel(encoded_repetition_data, p)
+        decoded_data = repetition_decode_bits_3_1(received_data)
 
-print("Encoded repetition data:")
-for byte in encoded_repetition_data:
-    print(bin(byte), end=", ")
-print("\n")
+        error_rate = calculate_error_rate(sample_bytes, decoded_data)
+        number_of_different_bytes = calculate_total_errors(sample_bytes, decoded_data)
 
-print("Decoded repetition  data:")
-decoded_data = repetition_decode_bits_3_1(encoded_repetition_data)
-for byte in decoded_data:
-    print(bin(byte), end=", ")
-print("\n")
-#
-# encoded_hamming_data = hamming_encode_bits(sample_bytes)
-#
-# print("Encoded hamming data:")
-# for byte in encoded_hamming_data:
-#     print(bin(byte), end=", ")
-# print("\n")
-#
-# print("Decoded hamming data:")
-# decoded_data = hamming_decode_bits(encoded_hamming_data)
-# for byte in decoded_data:
-#     print(bin(byte), end=", ")
-# print("\n")
+        print(f"BER ={p}")
+        print(f"BER': {error_rate}")
+        print(f"Number of different symbols: {int(number_of_different_bytes)}")
+
+
+def test_hamming_code():
+    sample_bytes = read_bytes_from_file(test_file)
+
+    encoded_hamming_data = hamming_encode_bits(sample_bytes)
+    print(f"Hamming Code (7,3)")
+    print(f"File: {test_file}")
+    print(f"Total Symbols: {len(sample_bytes)}")
+
+    for p in p_values:
+        received_data = binary_symmetric_channel(encoded_hamming_data, p)
+        decoded_data = hamming_decode_bits(received_data)
+
+        error_rate = calculate_error_rate(sample_bytes, decoded_data)
+        number_of_different_bytes = calculate_total_errors(sample_bytes, decoded_data)
+        print(f"BER ={p}")
+        print(f"BER': {error_rate}")
+        print(f"Number of different symbols: {int(number_of_different_bytes)}")
+
+
+test_repetition_code()
+test_hamming_code()
