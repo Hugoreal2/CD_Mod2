@@ -1,7 +1,7 @@
 import random
 import crcmod
 
-l_values = [1, 2, 3, 4]  ## VALUE IN BYTES
+l_values = [0, 1, 2, 3, 4]  ## VALUE IN BYTES
 k = 1024 // 8  # 1024 bits to bytes
 poly = 0x104C11DB7  # Exemplo de polinômio CRC-32
 
