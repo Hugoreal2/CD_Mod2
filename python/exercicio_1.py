@@ -1,6 +1,6 @@
 import random
 
-p_values = [0.0001, 0.001, 0.01, 0.1, 0.5]
+p_values = [10**-6, 10**-5, 10**-4, 10**-3, 10**-2]
 test_file = "testFilesCD/alice29.txt"
 
 
@@ -313,8 +313,8 @@ def test_hamming_code():
         write_bytes_to_file(f"outputSamples/decoded_hamming_{p}.txt", decoded_data)
 
 
-# test_repetition_code()
-# test_hamming_code()
+test_repetition_code()
+test_hamming_code()
 
 
 # def test_hamming_decode_bits():
