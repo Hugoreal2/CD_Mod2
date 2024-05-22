@@ -12,9 +12,6 @@ def calculate_crc(data: bytes, poly: int) -> int:
 
 # Teste de detecção de erros com CRC
 
-
-
-
 def burst_error_channel(data: bytes, L: int) -> bytes:
     new_data = bytearray(data)
     for i in range(L):
