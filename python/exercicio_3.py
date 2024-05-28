@@ -7,7 +7,7 @@ arduino_port = 'COM4'
 baud_rate = 9600  # Match this with the baud rate set on the Arduino
 
 ser = serial.Serial(arduino_port, baud_rate, timeout=1)
-time.sleep(5)  # Wait for the connection to be established
+time.sleep(1)  # Wait for the connection to be established
 
 
 def ip_checksum(data: bytes) -> int:
@@ -36,35 +36,34 @@ def ip_checksum(data: bytes) -> int:
     # data = bytes([0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111])
     # checksum = ip_checksum(data)
     # print(f"Checksum: {checksum:04X}")
-def send_data(number):
+
+
+def send_data(number: int):
     """Send a 2-byte number to the Arduino."""
     data = struct.pack('<H', number)  # '<H' means little-endian unsigned short (2 bytes)
     ser.write(data)
-    print(f"Sent: {number} as bytes: {data}")
 
-def receive_data():
+
+def receive_data() -> list[int]:
     """Receive 2-byte numbers from Arduino."""
-    primes = []
+    prime_numbers = []
     while True:
         bytes_read = ser.read(2)
         if len(bytes_read) == 2:
-            number = struct.unpack('<H', bytes_read)[0]  # Convert 2 bytes back to an integer
-            primes.append(number)
-            print(f"Received: {number}")
+            number_from_arduino = struct.unpack('<H', bytes_read)[0]  # Convert 2 bytes back to an integer
+            prime_numbers.append(number_from_arduino)
         else:
             break
-    return primes
+    return prime_numbers
+
 
 try:
-    number = 50  # Example number to send to Arduino
+    number = int(input("Enter a number: "))
     send_data(number)
-    time.sleep(2)  # Wait a bit before checking for a response
 
     # Receive data from the Arduino
     primes = receive_data()
     print(f"Prime numbers received from Arduino: {primes}")
 
-except KeyboardInterrupt:
-    print("Program stopped by user")
 finally:
     ser.close()
