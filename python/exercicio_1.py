@@ -331,22 +331,7 @@ def test_no_correction_code():
         write_bytes_to_file(f"outputSamples/decoded_no_correction_{p}.txt", received_data)
 
 
-# test_repetition_code()
-test_hamming_code()
+test_repetition_code()
+# test_hamming_code()
 
 # test_no_correction_code()
-
-# def test_hamming_decode_bits():
-#     sample_bytes = bytes([0b1110001]) ## correct is 0b1110 with error in the thrid parity bit
-#     encoded_hamming_data = hamming_decode_bits(sample_bytes)
-#     print(f"Hamming Code (7,3)")
-#     for i in range(len(encoded_hamming_data)):
-#         print(f"Decoded: {encoded_hamming_data[i]:08b}")
-#
-#     sample_bytes = bytes([0b1010111]) ## correct is 0b1010 with error in the 3rd parity bit
-#     encoded_hamming_data = hamming_decode_bits(sample_bytes)
-#     print(f"Hamming Code (7,3)")
-#     for i in range(len(encoded_hamming_data)):
-#         print(f"Decoded: {encoded_hamming_data[i]:08b}")
-#
-# test_hamming_decode_bits()

@@ -5,7 +5,7 @@ import time
 
 arduino_port = 'COM4'
 baud_rate = 9600  # Match this with the baud rate set on the Arduino
-
+l_values = [0, 1, 2, 3, 4]  ## VALUE IN BYTES
 ser = serial.Serial(arduino_port, baud_rate, timeout=1)
 time.sleep(1)  # Wait for the connection to be established
 
@@ -32,11 +32,12 @@ def ip_checksum(data: bytes) -> int:
 
     return (~checksum) & 0xffff
 
-    # Example usage
-    # data = bytes([0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111])
-    # checksum = ip_checksum(data)
-    # print(f"Checksum: {checksum:04X}")
+def burst_error_channel(data: bytes, L: int) -> bytes:
+    new_data = bytearray(data)
+    for i in range(L):
+        new_data[i] = new_data[i] ^ 0b11111111
 
+    return bytes(new_data)
 
 def send_data(number: int):
     """Send a 2-byte number to the Arduino."""
@@ -78,19 +79,34 @@ try:
 
     primes_arduino = primes_arduino_and_checksum[:-1]
     checksum = primes_arduino_and_checksum[-1]
-
     print(f"Prime numbers received from Arduino: {primes_arduino}")
     print(f"Checksum received from Arduino: {checksum:04X}")
 
-    primes_python = calculate_prime_numbers(number)
-    print(f"Prime numbers calculated in Python: {primes_python}")
+    #
 
     # each prime number needs to ocupy 2 bytes
     primes_arduino_bytes = struct.pack(f'>{len(primes_arduino)}H', *primes_arduino)
 
-    primes_python_bytes = struct.pack(f'>{len(primes_python)}H', *primes_python)
-    python_checksum = ip_checksum(primes_python_bytes)
+    python_checksum = ip_checksum(primes_arduino_bytes)
     print(f"Checksum calculated in Python: {python_checksum:04X}")
+
+    if python_checksum == checksum:
+        print("Checksums match!")
+    else:
+        print("Checksums do not match!")
+
+    for L in l_values:
+        print(f"Testing with burst length L = {L}")
+        data_with_errors = burst_error_channel(primes_arduino_bytes, L)
+        checksum_with_errors = ip_checksum(data_with_errors)
+        print(f"Checksum with errors: {checksum_with_errors:04X}")
+
+        if checksum == checksum_with_errors:
+            print("Errors not detected with burst length L = {L}!")
+        else:
+            print("Errors detected with burst length L = {L}!")
+        print()
+
 
 finally:
     ser.close()
