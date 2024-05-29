@@ -1,6 +1,7 @@
+import math
 import random
 
-p_values = [10**-6, 10**-5, 10**-4, 10**-3, 10**-2]
+p_values = [10 ** -6, 10 ** -5, 10 ** -4, 10 ** -3, 10 ** -2]
 test_file = "testFilesCD/alice29.txt"
 
 
@@ -283,7 +284,7 @@ def test_repetition_code():
         decoded_data = repetition_decode_bits_3_1(received_data)
 
         error_rate = calculate_error_rate(sample_bytes, decoded_data)
-        number_of_different_bytes = calculate_total_errors(sample_bytes, decoded_data)
+        number_of_different_bytes = math.ceil(calculate_total_errors(sample_bytes, decoded_data))
 
         print(f"BER ={p}")
         print(f"BER': {error_rate}")
@@ -305,7 +306,7 @@ def test_hamming_code():
         decoded_data = hamming_decode_bits(received_data)
 
         error_rate = calculate_error_rate(sample_bytes, decoded_data)
-        number_of_different_bytes = calculate_total_errors(sample_bytes, decoded_data)
+        number_of_different_bytes = math.ceil(calculate_total_errors(sample_bytes, decoded_data))
         print(f"BER ={p}")
         print(f"BER': {error_rate}")
         print(f"Number of different symbols: {int(number_of_different_bytes)}")
@@ -313,9 +314,28 @@ def test_hamming_code():
         write_bytes_to_file(f"outputSamples/decoded_hamming_{p}.txt", decoded_data)
 
 
-test_repetition_code()
-test_hamming_code()
+def test_no_correction_code():
+    sample_bytes = read_bytes_from_file(test_file)
 
+    print(f"No correction")
+    print(f"File: {test_file}")
+    print(f"Total Symbols: {len(sample_bytes)}")
+
+    for p in p_values:
+        received_data = binary_symmetric_channel(sample_bytes, p)
+
+        error_rate = calculate_error_rate(sample_bytes, received_data)
+        number_of_different_bytes = math.ceil(calculate_total_errors(sample_bytes, received_data))
+        print(f"\n\nBER ={p}")
+        print(f"BER': {error_rate}")
+        print(f"Number of different symbols: {int(number_of_different_bytes)}")
+
+        write_bytes_to_file(f"outputSamples/decoded_no_correction_{p}.txt", received_data)
+
+
+test_repetition_code()
+# test_hamming_code()
+# test_no_correction_code()
 
 # def test_hamming_decode_bits():
 #     sample_bytes = bytes([0b1110001]) ## correct is 0b1110 with error in the thrid parity bit
