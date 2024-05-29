@@ -1,8 +1,11 @@
 import math
 import random
 
-p_values = [10 ** -6, 10 ** -5, 10 ** -4, 10 ** -3, 10 ** -2]
-test_file = "testFilesCD/alice29.txt"
+import numpy as np
+
+p_values = [10 ** -2]
+# p_values = [10 ** -6, 10 ** -5, 10 ** -4, 10 ** -3, 10 ** -2]
+test_file = "testFilesCD/abbccc.txt"
 
 
 ## ------------------------------------------------------
@@ -171,18 +174,20 @@ def hamming_encode_bits(message: bytes) -> bytes:
         encoded_hamming_data += hamming_encode(data1)
         encoded_hamming_data += hamming_encode(data2)
 
+        teste = binary_string_to_bytes(encoded_hamming_data)
+
     return binary_string_to_bytes(encoded_hamming_data)
 
 
 def hamming_encode(data: int) -> str:
-    bit0 = (data >> 0) & 1
-    bit1 = (data >> 1) & 1
-    bit2 = (data >> 2) & 1
-    bit3 = (data >> 3) & 1
+    bit_3 = (data >> 0) & 1
+    bit_2 = (data >> 1) & 1
+    bit_1 = (data >> 2) & 1
+    bit_0 = (data >> 3) & 1
 
-    b0 = bit1 ^ bit2 ^ bit3
-    b1 = bit0 ^ bit1 ^ bit3
-    b2 = bit0 ^ bit2 ^ bit3
+    b0 = bit_3 ^ bit_2 ^ bit_1
+    b1 = bit_0 ^ bit_1 ^ bit_3
+    b2 = bit_0 ^ bit_2 ^ bit_3
 
     encoded_bits = (data << 3) | (b0 << 2) | (b1 << 1) | b2
 
@@ -190,6 +195,37 @@ def hamming_encode(data: int) -> str:
 
 
 def check_and_correct_hamming_code(byte: int) -> int:
+    """
+    Decodes a received Hamming (7, 4) codeword, corrects single-bit errors,
+    and returns the original data or 0 if decoding fails.
+
+    Args:
+        byte: The received 7-bit codeword as an integer (0-127).
+
+    Returns:
+        The corrected 4-bit data as an integer (0-15) or 0 if decoding fails.
+    """
+
+    # Define the Hamming (7, 4) parity check matrix (H)
+    # H = np.array([[1, 1, 0, 1, 1, 0, 0],
+    #               [1, 0, 1, 1, 0, 1, 0],
+    #               [0, 1, 1, 1, 0, 0, 1]])
+    #
+    # received_bits = np.array([int(bit) for bit in format(byte, '07b')], dtype=np.uint8)
+    #
+    # # Calculate the syndrome (S)
+    # syndrome = np.dot(H, received_bits) % 2
+    #
+    # if np.all(syndrome == 0):  # No errors detected
+    #     return int(''.join(str(int(b)) for b in received_bits[:4]), 2)
+    # elif np.sum(syndrome) == 1:  # Single-bit error
+    #     error_location = int(''.join(str(int(s)) for s in syndrome[::-1]), 2)
+    #     corrected_codeword = received_bits.copy()
+    #     corrected_codeword[error_location] = (corrected_codeword[error_location] + 1) % 2
+    #     return int(''.join(str(int(c)) for c in corrected_codeword[:4]), 2)
+    # else:  # More than one error (undetectable/uncorrectable)
+    #     return 0
+
     data = byte >> 3
 
     parity_bits_str = int_to_binary_string(byte & 0b0000111, 3)
@@ -240,7 +276,7 @@ def check_and_correct_hamming_code(byte: int) -> int:
     elif sindroma == 0b001:
         data ^= 0b0000001
 
-    return check_and_correct_hamming_code(data)
+    return data
 
 
 def hamming_decode_bits(message: bytes) -> bytes:
@@ -333,8 +369,9 @@ def test_no_correction_code():
         write_bytes_to_file(f"outputSamples/decoded_no_correction_{p}.txt", received_data)
 
 
-test_repetition_code()
-# test_hamming_code()
+# test_repetition_code()
+test_hamming_code()
+
 # test_no_correction_code()
 
 # def test_hamming_decode_bits():
