@@ -57,13 +57,37 @@ def receive_data() -> list[int]:
     return prime_numbers
 
 
+def calculate_prime_numbers(N: int) -> list[int]:
+    prime_numbers = []
+    for i in range(1, N + 1):
+        if i > 1:
+            for j in range(2, i):
+                if i % j == 0:
+                    break
+            else:
+                prime_numbers.append(i)
+    return prime_numbers
+
+
 try:
     number = int(input("Enter a number: "))
     send_data(number)
 
     # Receive data from the Arduino
-    primes = receive_data()
-    print(f"Prime numbers received from Arduino: {primes}")
+    primes_arduino = receive_data()
+    print(f"Prime numbers received from Arduino: {primes_arduino}")
+
+    primes_python = calculate_prime_numbers(number)
+    print(f"Prime numbers calculated in Python: {primes_python}")
+
+    # each prime number needs to ocupy 2 bytes
+    primes_arduino_bytes = struct.pack(f'>{len(primes_arduino)}H', *primes_arduino)
+    arduino_checksum = ip_checksum(primes_arduino_bytes)
+    print(f"Checksum received from Arduino: {arduino_checksum:04X}")
+
+    primes_python_bytes = struct.pack(f'>{len(primes_python)}H', *primes_python)
+    python_checksum = ip_checksum(primes_python_bytes)
+    print(f"Checksum calculated in Python: {python_checksum:04X}")
 
 finally:
     ser.close()
