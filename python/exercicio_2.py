@@ -3,9 +3,7 @@ import crcmod
 
 l_values = [0, 1, 2, 3, 4]  ## VALUE IN BYTES
 k = 1024 // 8  # 1024 bits to bytes
-## TODO MAYBE CHANGE TO POLINOMIO QUE O PROF QUER
-poly = 0x104C11DB7  # Exemplo de polinômio CRC-32
-
+poly = 0x104C11DB7  # hexa of CRC Poly X32+X26+X23+X22+X16+X12+X11+X10+X8+X7+X5+X4+X2+X+1
 
 # Função para calcular CRC
 def calculate_crc(data: bytes, poly: int) -> int:
