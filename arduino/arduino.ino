@@ -1,5 +1,7 @@
+#define BAUD_RATE 9600
+
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(BAUD_RATE);
 }
 
 void loop() {

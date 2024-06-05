@@ -3,23 +3,22 @@ import struct
 import serial
 import time
 
-arduino_port = 'COM4'
-baud_rate = 9600  # Match this with the baud rate set on the Arduino
-l_values = [0, 1, 2, 3, 4]  ## VALUE IN BYTES
-ser = serial.Serial(arduino_port, baud_rate, timeout=1)
-time.sleep(1)  # Wait for the connection to be established
+# possible baud_rates include: 9600, 19200, 31250, 38400, 57600, 74880, 115200, 230400, 250000, 500000, 921600
 
+ARDUINO_PORT = 'COM4'
+BAUD_RATE = 9600
+l_values = [0, 1, 2, 3, 4]  ## VALUE IN BYTES
+ser = serial.Serial(ARDUINO_PORT, BAUD_RATE, timeout=1)
+time.sleep(1)  # Wait for the connection to be established
 
 def ip_checksum(data: bytes) -> int:
     """
-  Calculates the IP checksum for a given byte array.
+    Calculates the IP checksum for a given byte array.
 
-  Args:
-      data: A byte array representing the IP header or data.
+    @data A byte array representing the IP header or data.
 
-  Returns:
-      An integer representing the 16-bit checksum.
-  """
+    Returns: An integer representing the 16-bit checksum.
+    """
     if len(data) % 2 != 0:
         raise ValueError("data length must be a multiple of 2")
 
@@ -82,8 +81,6 @@ try:
     print(f"Prime numbers received from Arduino: {primes_arduino}")
     print(f"Checksum received from Arduino: {checksum:04X}")
 
-    #
-
     # each prime number needs to ocupy 2 bytes
     primes_arduino_bytes = struct.pack(f'>{len(primes_arduino)}H', *primes_arduino)
 
@@ -106,7 +103,6 @@ try:
         else:
             print("Errors detected with burst length L = {L}!")
         print()
-
 
 finally:
     ser.close()
