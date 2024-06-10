@@ -41,7 +41,8 @@ void loop() {
 
 bool isPrime(int num) {
   if (num <= 1) return false;
-  for (int i = 2; i <= sqrt(num); i++) {
+  const int sqrt_num = sqrt(num);
+  for (int i = 2; i <= sqrt_num; i++) {
     if (num % i == 0) return false;
   }
   return true;
