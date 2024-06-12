@@ -1,17 +1,18 @@
 import random
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from bitarray import bitarray
 
 file_path = "test_files_cd/"
 output_path = "output/"
+conversion_path = "converted/"
 
 files_to_be_tested = [
     "a.txt", 
     "alice29.txt", 
     "arrays.kt", 
-    "barries.jpg", 
-    "barries.tif", 
+    # "barries.jpg", 
     "bird.gif", 
     "cp.htm", 
     "fibonacci.kt", 
@@ -243,8 +244,8 @@ def transmit_hamming_74_correction(input: bytes, p: float) -> bytes:
     sent_through_bsc = binary_symmetric_channel(encoded, p)
     return hamming_74_decode(sent_through_bsc, len(input) * 8)
 
-## ------------------------------------------------------
-#                        MAIN
+### ------------------------------------------------------
+#                        MAIN - Conversions for all p Values
 ## ------------------------------------------------------
 
 # dictionary to store the methods and lookup by name
@@ -254,8 +255,30 @@ methods = {
     "Hamming(7,4)": transmit_hamming_74_correction,
 }
 
+print(f"Converting files to {conversion_path} for all p values")
+
+os.makedirs(output_path + conversion_path, exist_ok=True)
+# save for all p values and methods to output files
 for file_name in files_to_be_tested:
-    print(f"Testing {file_name}")
+    print(f"\tTesting {file_name}")
+    with open(file_path + file_name, "rb") as file:
+        original = file.read()
+
+    for method_name, method in methods.items():
+        for p in P_VALUES:
+            with open(output_path + conversion_path + file_name + f"_{method_name}_{p}.txt", "wb") as file:
+                received = method(original, p)
+                file.write(received)
+
+
+## ------------------------------------------------------
+#                        MAIN - Graphs
+## ------------------------------------------------------
+
+print(f"Graphing files for all p values")
+
+for file_name in files_to_be_tested:
+    print(f"\tTesting {file_name}")
     with open(file_path + file_name, "rb") as file:
         original = file.read()
 
@@ -267,7 +290,7 @@ for file_name in files_to_be_tested:
     for method_name, method in methods.items():
         bers = []
         for p in P_VALUES:
-            print(f"Testing {method_name} with p={p}")
+            print(f"\tTesting {method_name} with p={p}")
             ber = 0
             for _ in range(NUM_ITERATIONS):
                 received = method(original, p)

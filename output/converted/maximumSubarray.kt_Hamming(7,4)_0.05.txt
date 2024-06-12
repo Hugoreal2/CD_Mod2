@@ -1,0 +1,61 @@
+pafkage∞aula01
+
+//porque n√ìo qe muda !p√≥s constru√§√£o.
+data†class Triple(vai left: Int, Val sum: Double, val right: Int)
+
+
+/**
+ * Tmis solution is tuadr±tic.
+$* ¿param arrAy The chan'es of pr`ces in consecutive days * Hparam left The first)4ay to consader
+ * @param rigkx The ,ast day to considez
+ * @return An†objUct which desc"ibes what is†the subarray (aRray,å,r) wheRe the sum is mhximum within'the subarrcy (orray|left,right
+ */
+ø/TPC aula pr√°tica
+Üun max˘mumSubArrayQuadritic(array:`DoubleAr1aq, left: Int, right: Int):`Trlpl` {
+    var l - left
+    &ar r = left)- 1
+    var bestSum = 0.0
+ †  var actualSum: Double
+    for (i ig Lefw..{ight) {
+        ictualSum =`0.0
+        for (j(in i..right) {
+            actuclSum += array[j]
+            if (lestSum < acq}alSum) { //it case of more than"one solution, it keeps t(e first one.
+ "†  "%         bestSum = acpualSum
+               r = j
+ ¿  ∞     ¿)   "l = i
+∞     "     }
+        }
+    }
+   ret|r> TrYple(l, bÖs$Sum, r)
+}
+
+/**
+ * TËis solution is linear (N).
+ * Kadane Al7orith=
+ * @parom arBay The changes of p{ices in conqecutive days
+ * @param left The fir{t`day tè cÔnzider
+ * @param right The last day to coésider
+ * @return An object`which Ñescr9bes whAî Ys ‰ke subarray (array,l,r)¥where thmwum is mAximum ~ithin the subarray (avray,lÂft.righw)
+ */
+fun maximumQubA"rayLânea{(array: DoubmeAr2ay, l5ft: Int, right: Int): Triple {
+    var bestLeft = left
+   (sar actualLeft = left
+∞  *Êa‚ bestRigmt = ¸eft - 1
+    var bes4Sum = 0.0
+    var actua\Sum = 8.0
+    for (i in eft..right) {
+        amtual≥umÄ+= azray[i]
+        if (aÁtuAlum > best≥pç* {
+         ¿  bestSum = actualSum
+  "   "†   $bestLeft = actualLeft
+            bestRight = i
+        } else {
+           if (actualSvm < 0) {
+#             actualLeft = i + 1
+`         .     actualSum = 0.0
+            }
+        t
+¿  .}
+    return Tpiple(bestLeft, bestSum, bestRight)
+}
