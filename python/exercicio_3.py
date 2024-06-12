@@ -1,23 +1,92 @@
 import struct
-
 import serial
-import time
 
-# possible baud_rates include: 9600, 19200, 31250, 38400, 57600, 74880, 115200, 230400, 250000, 500000, 921600
+DEFAULT_TARGET_NUMBER = 50
+DEFAULT_PORT = "COM4"
+DEFAULT_BAUDRATE = 9600
 
-ARDUINO_PORT = 'COM4'
-BAUD_RATE = 9600
-l_values = [0, 1, 2, 3, 4]  ## VALUE IN BYTES
-ser = serial.Serial(ARDUINO_PORT, BAUD_RATE, timeout=1)
-time.sleep(1)  # Wait for the connection to be established
+# ------------------------------------------------------
+#                       UTILS FUNCTIONS
+# ------------------------------------------------------
+def prompt_target_number() -> int:
+    returned = input(f"Target Number (blank for {DEFAULT_TARGET_NUMBER}): ")
+
+    if returned == "":
+        return DEFAULT_TARGET_NUMBER
+    elif returned.isdigit():
+        number = int(returned)
+        # check if its between 0 and 255
+        if 0 <= number <= 255:
+            return number
+        else:
+            raise ValueError("Target Number must be between 0 and 255")
+    else:
+        raise ValueError("Target Number must be a number")
+
+def prompt_port() -> str:
+    returned = input(f"Serial Port to use (blank for {DEFAULT_PORT}): ")
+
+    if returned == "":
+        return DEFAULT_PORT
+    else:
+        return returned
+
+def prompt_baudrate() -> int:
+    returned = input(f"Baudate to use (blank for {DEFAULT_BAUDRATE}): ")
+
+    if returned == "":
+        return DEFAULT_BAUDRATE
+    else:
+        return int(returned)
+
+def prompt_do_checksum() -> bool:
+    returned = input("Perform Checksum? (y/n): ")
+
+    return returned.lower() == "y"
+
+def send_data(ser: serial.Serial, target_number: int, do_checksum: bool):
+    """
+    Sends one byte with the target number and one byte to command to do checksum
+    """
+
+    ser.write(struct.pack("B", target_number))
+    ser.write(struct.pack("B", 1 if do_checksum else 0))
+
+def receive_data(ser: serial.Serial) -> bytes:
+    """
+    Receives 2 byte ints and puts them in a byte array
+    Until 4 bytes of 1s are received.
+    """
+
+    prime_numbers = bytearray()
+
+    while True:
+        received = ser.read(2)
+
+        if received == b"\xFF\xFF":
+            break
+
+        prime_numbers += received
+
+    return prime_numbers
+
+def receive_checksum(ser: serial.Serial) -> int:
+    """
+    Reads two bytes from the serial and returns them as an int
+    """
+
+    received = ser.read(2)
+
+    return struct.unpack("H", received)[0]
+
 
 def ip_checksum(data: bytes) -> int:
     """
-    Calculates the IP checksum for a given byte array.
+    Calculates the IP checksum of the given data.
 
-    @data A byte array representing the IP header or data.
+    :param data: the data to calculate the checksum
 
-    Returns: An integer representing the 16-bit checksum.
+    :return: the checksum
     """
     if len(data) % 2 != 0:
         raise ValueError("data length must be a multiple of 2")
@@ -29,80 +98,35 @@ def ip_checksum(data: bytes) -> int:
     while checksum > 0xffff:
         checksum = (checksum & 0xffff) + (checksum >> 16)
 
-    return (~checksum) & 0xffff
+    return ~checksum & 0xffff
 
-def burst_error_channel(data: bytes, L: int) -> bytes:
-    new_data = bytearray(data)
-    for i in range(L):
-        new_data[i] = new_data[i] ^ 0b11111111
+# ------------------------------------------------------
+#                       MAIN
+# ------------------------------------------------------
 
-    return bytes(new_data)
+target_number = prompt_target_number()
+port = prompt_port()
+baudrate = prompt_baudrate()
+do_checksum = prompt_do_checksum()
 
-def send_data(number: int):
-    """Send a 2-byte number to the Arduino."""
-    data = struct.pack('<H', number)  # '<H' means little-endian unsigned short (2 bytes)
-    ser.write(data)
+with serial.Serial(port, baudrate) as ser:
+    send_data(ser, target_number, do_checksum)
 
+    prime_numbers_bytes = receive_data(ser)
+    print("Prime Numbers:")
+    for i in range(0, len(prime_numbers_bytes), 4):
+        number = struct.unpack("I", prime_numbers_bytes[i:i+4])[0]
+        print(number)
 
-def receive_data() -> list[int]:
-    """Receive 2-byte numbers from Arduino."""
-    prime_numbers = []
-    while True:
-        bytes_read = ser.read(2)
-        if len(bytes_read) == 2:
-            number_from_arduino = struct.unpack('<H', bytes_read)[0]  # Convert 2 bytes back to an integer
-            prime_numbers.append(number_from_arduino)
-        else:
-            break
-    return prime_numbers
+    # if do_checksum:
+    #     checksum = ip_checksum(prime_numbers_bytes)
+    #     received_checksum = receive_checksum(ser)
+    #
+    #     print(f"Received checksum: {hex(received_checksum)}")
+    #     print(f"Calculated checksum: {hex(checksum)}")
+    #
+    #     if(received_checksum == checksum):
+    #         print("Checksums match!")
+    #     else:
+    #         print("Checksums don't match!")
 
-
-def calculate_prime_numbers(N: int) -> list[int]:
-    prime_numbers = []
-    for i in range(1, N + 1):
-        if i > 1:
-            for j in range(2, i):
-                if i % j == 0:
-                    break
-            else:
-                prime_numbers.append(i)
-    return prime_numbers
-
-
-try:
-    number = int(input("Enter a number: "))
-    send_data(number)
-
-    # Receive data from the Arduino
-    primes_arduino_and_checksum = receive_data()
-
-    primes_arduino = primes_arduino_and_checksum[:-1]
-    checksum = primes_arduino_and_checksum[-1]
-    print(f"Prime numbers received from Arduino: {primes_arduino}")
-    print(f"Checksum received from Arduino: {checksum:04X}")
-
-    # each prime number needs to ocupy 2 bytes
-    primes_arduino_bytes = struct.pack(f'>{len(primes_arduino)}H', *primes_arduino)
-
-    python_checksum = ip_checksum(primes_arduino_bytes)
-    print(f"Checksum calculated in Python: {python_checksum:04X}")
-
-    if python_checksum == checksum:
-        print("Checksums match!")
-    else:
-        print("Checksums do not match!")
-
-    for L in l_values:
-        print(f"Testing with burst length L = {L}")
-        data_with_errors = burst_error_channel(primes_arduino_bytes, L)
-        checksum_with_errors = ip_checksum(data_with_errors)
-        print(f"Checksum with errors: {checksum_with_errors:04X}")
-
-        if checksum == checksum_with_errors:
-            print("Errors not detected with burst length L = {L}!")
-        else:
-            print("Errors detected with burst length L = {L}!")
-        print()
-
-finally:
-    ser.close()

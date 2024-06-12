@@ -1,49 +1,63 @@
-#define BAUD_RATE 9600
 
+constexpr int BAUD_RATE = 9600;
+constexpr bool INTRODUCE_ERROR = true;
+
+//////////////////////////////
+//        MAIN FUNCTIONS
+//////////////////////////////
 void setup() {
   Serial.begin(BAUD_RATE);
+  while (!Serial) continue;
 }
 
 void loop() {
-  if (Serial.available() >= 2) {
-    // Read the incoming 2 bytes
-    int number = Serial.read() | (Serial.read() << 8);
-    unsigned long checksum = 0;
+  if (Serial.available() == 0) return;
 
-    // Collect all prime numbers up to the given number
-    for (int i = 2; i <= number; i++) {
-      if (isPrime(i)) {
-        byte low = lowByte(i);
-        byte high = highByte(i);
+  int target_number = Serial.read();
+  bool send_checksum = Serial.read() != 0;
 
-        // Send each prime number as 2 bytes
-        Serial.write(low);
-        Serial.write(high);
+  unsigned long checksum = 0lu;
 
-        // Add to checksum
-        checksum += (high << 8) | low;
+  for (int i = 0; i < target_number; i++) {
+    if (isPrime(i)) {
+      const byte low = lowByte(i);
+      const byte high = highByte(i);
 
-        // Handle carry around
-        while (checksum >> 16) {
-          checksum = (checksum & 0xFFFF) + (checksum >> 16);
-        }
+      Serial.write(low);
+      Serial.write(high);
+
+      // Add to checksum
+      checksum += (high << 8) | low;
+
+      // Handle carry around
+      while (checksum >> 16) {
+        checksum = (checksum & 0xFFFF) + (checksum >> 16);
       }
     }
-
-    // Final checksum calculation: one's complement
-    checksum = ~checksum & 0xFFFF;
-
-    // Send checksum as 2 bytes
-    Serial.write(lowByte(checksum));
-    Serial.write(highByte(checksum));
   }
+
+  // Termination Message
+  Serial.write(0xFF);
+  Serial.write(0xFF);
+
+  // Serial.write(lowByte(checksum));
+  // Serial.write(highByte(checksum));
+
+  delay(1000); // Don't spam the serial port
 }
 
-bool isPrime(int num) {
-  if (num <= 1) return false;
-  const int sqrt_num = sqrt(num);
-  for (int i = 2; i <= sqrt_num; i++) {
-    if (num % i == 0) return false;
+//////////////////////////////
+//        MAIN FUNCTIONS
+//////////////////////////////
+bool isPrime(int n) {
+  if (n <= 1) return false;
+  if (n <= 3) return true;
+  if (n % 2 == 0 || n % 3 == 0) return false;
+
+  for (int i = 5; i * i <= n; i += 6) {
+    if (n % i == 0 || n % (i + 2) == 0) return false;
   }
+
   return true;
 }
+
