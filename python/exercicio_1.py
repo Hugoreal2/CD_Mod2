@@ -9,12 +9,12 @@ output_path = "output/"
 files_to_be_tested = [
     "a.txt", 
     # "alice29.txt", 
-    # "arrays.kt", 
+    "arrays.kt", 
     # "barries.jpg", 
     # "barries.tif", 
     # "bird.gif", 
     # "cp.htm", 
-    # "fibonacci.kt", 
+    "fibonacci.kt", 
     "maximumSubarray.kt", 
     "person.java", 
     # "progc.c", 
@@ -34,7 +34,7 @@ P_VALUES = [
     0.6
 ]
 
-NUM_ITERATIONS = 7
+NUM_ITERATIONS = 5
 
 
 ## ------------------------------------------------------
@@ -94,7 +94,7 @@ def bit_error_rate(original: bytes, received: bytes) -> float:
 #                       1 - a) (i)
 ## ------------------------------------------------------
 
-def transmit_no_hamming(input: bytes, p: float) -> bytes:
+def transmit_no_error_correction(input: bytes, p: float) -> bytes:
     return binary_symmetric_channel(input, p)
 
 ## ------------------------------------------------------
@@ -238,9 +238,9 @@ def transmit_hamming_74_correction(input: bytes, p: float) -> bytes:
 
 # dictionary to store the methods and lookup by name
 methods = {
-    "no_hamming": transmit_no_hamming,
-    "repetition_31": transmit_repetition_31_correction,
-    "hamming_74": transmit_hamming_74_correction,
+    "Sem Correcção": transmit_no_error_correction,
+    "Repetição(3,1)": transmit_repetition_31_correction,
+    "Hamming(7,4)": transmit_hamming_74_correction,
 }
 
 for file_name in files_to_be_tested:
@@ -263,6 +263,7 @@ for file_name in files_to_be_tested:
                 ber += bit_error_rate(original, received)
             ber /= NUM_ITERATIONS
             bers.append(ber)
+
         
         # Plot the line graph for each method
         plt.plot(P_VALUES, bers, marker='o', label=method_name)
@@ -270,29 +271,3 @@ for file_name in files_to_be_tested:
     plt.legend()
     plt.savefig(output_path + file_name + ".png")
 
-
-# plot difference for the a.txt file
-plt.figure()
-plt.title("BER difference from p-value for a.txt")
-plt.xlabel("Error Probability (p)")
-plt.ylabel("Bit Error Rate (BER) Difference")
-
-with open(file_path + "a.txt", "rb") as file:
-    original = file.read()
-
-for method_name, method in methods.items():
-    p_values = []
-    ber_diffs = []
-    for p in P_VALUES:
-        ber = 0
-        for _ in range(NUM_ITERATIONS):
-            received = method(original, p)
-            ber += bit_error_rate(original, received)
-        ber /= NUM_ITERATIONS
-        diff = ber - p
-        p_values.append(p)
-        ber_diffs.append(diff)
-    plt.plot(p_values, ber_diffs, marker='o', label=method_name)
-
-plt.legend()
-plt.show()
