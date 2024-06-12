@@ -14,6 +14,7 @@ l_values = [
     64, 
     128
 ]
+
 k = 1024 // 8  # 1024 bits - 128 bytes
 poly_crc_32 = 0x104C11DB7
 

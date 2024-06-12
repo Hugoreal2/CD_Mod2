@@ -8,12 +8,12 @@ output_path = "output/"
 
 files_to_be_tested = [
     "a.txt", 
-    # "alice29.txt", 
+    "alice29.txt", 
     "arrays.kt", 
-    # "barries.jpg", 
-    # "barries.tif", 
-    # "bird.gif", 
-    # "cp.htm", 
+    "barries.jpg", 
+    "barries.tif", 
+    "bird.gif", 
+    "cp.htm", 
     "fibonacci.kt", 
     "maximumSubarray.kt", 
     "person.java", 
@@ -29,7 +29,6 @@ P_VALUES = [
     0.1,
     0.15,
     0.2,
-
 ]
 
 NUM_ITERATIONS = 5
@@ -93,6 +92,10 @@ def bit_error_rate(original: bytes, received: bytes) -> float:
 ## ------------------------------------------------------
 
 def transmit_no_error_correction(input: bytes, p: float) -> bytes:
+    """
+    Simulate the transmission of a message through a 
+    binary symmetric channel without error correction.
+    """
     return binary_symmetric_channel(input, p)
 
 ## ------------------------------------------------------
@@ -120,7 +123,8 @@ def repetition_3_1_encode(message: bytes) -> bytes:
 
 def repetition_3_1_decode(message: bytes) -> bytes:
     """
-    Decode a message using repetition code. Each bit that appears more than half of the time is considered as the correct bit.
+    Decode a message using repetition code. 
+    Each bit that appears more than half of the time is considered as the correct bit.
 
     :param message: the message to be decoded
 
@@ -139,6 +143,10 @@ def repetition_3_1_decode(message: bytes) -> bytes:
 
     
 def transmit_repetition_31_correction(input: bytes, p: float) -> bytes:
+    """
+    Simulate the transmission of a message through a
+    binary symmetric channel using repetition code (3,1).
+    """
     encoded = repetition_3_1_encode(input)
     sent_through_bsc = binary_symmetric_channel(encoded, p)
     return repetition_3_1_decode(sent_through_bsc)
@@ -179,6 +187,7 @@ def hamming_74_decode(message: bytes, original_length: int) -> bytes:
     Decode a message using Hamming code for 7,4. 3 parity bits and 4 bits of data.
 
     :param message: the message to be decoded
+    :param original_length: the original length of the message
 
     :return: the decoded message
     """
@@ -220,15 +229,19 @@ def hamming_74_decode(message: bytes, original_length: int) -> bytes:
     return output_bits.tobytes()
 
 def transmit_hamming_74_correction(input: bytes, p: float) -> bytes:
+    """
+    Simulate the transmission of a message through a
+    binary symmetric channel using Hamming code (7,4).
+
+    :param input: the message to be transmitted
+    :param p: the error probability
+
+    :return: the received message
+    """
+
     encoded = hamming_74_encode(input)
     sent_through_bsc = binary_symmetric_channel(encoded, p)
     return hamming_74_decode(sent_through_bsc, len(input) * 8)
-
-## ------------------------------------------------------
-#                       1 - b)
-## ------------------------------------------------------
-
-
 
 ## ------------------------------------------------------
 #                        MAIN

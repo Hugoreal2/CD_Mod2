@@ -32,6 +32,14 @@ def ip_checksum(data: bytes) -> int:
     return (~checksum) & 0xffff
 
 def burst_error_channel(data: bytes, L: int) -> bytes:
+    """
+    Simulate a burst error channel with L errors.
+
+    :param data: the data to be transmitted
+    :param L: the number of errors
+
+    :return: the received data
+    """
     new_data = bytearray(data)
     for i in range(L):
         new_data[i] = new_data[i] ^ 0b11111111
@@ -39,13 +47,21 @@ def burst_error_channel(data: bytes, L: int) -> bytes:
     return bytes(new_data)
 
 def send_data(number: int):
-    """Send a 2-byte number to the Arduino."""
+    """
+    Send a 2-byte number to the Arduino.
+
+    :param number: the number to be sent
+    """
     data = struct.pack('<H', number)  # '<H' means little-endian unsigned short (2 bytes)
     ser.write(data)
 
 
 def receive_data() -> list[int]:
-    """Receive 2-byte numbers from Arduino."""
+    """
+    Receive 2-byte numbers from Arduino.
+
+    :return: a list of numbers received from the Arduino
+    """
     prime_numbers = []
     while True:
         bytes_read = ser.read(2)
@@ -58,6 +74,9 @@ def receive_data() -> list[int]:
 
 
 def calculate_prime_numbers(N: int) -> list[int]:
+    """
+    Calculate the prime numbers up to N.
+    """
     prime_numbers = []
     for i in range(1, N + 1):
         if i > 1:
