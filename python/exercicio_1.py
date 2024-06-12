@@ -17,21 +17,19 @@ files_to_be_tested = [
     "fibonacci.kt", 
     "maximumSubarray.kt", 
     "person.java", 
-    # "progc.c", 
+    "progc.c",
     "view.kt", 
 ]
 
 P_VALUES = [
+    0.0001,
+    0.001,
     0.01,
     0.05,
-    0.08,
     0.1,
     0.15,
     0.2,
-    0.25,
-    0.35,
-    0.5,
-    0.6
+
 ]
 
 NUM_ITERATIONS = 5
